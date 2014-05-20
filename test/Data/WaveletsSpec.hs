@@ -1,4 +1,4 @@
-module Data.WaveletsSpec (main, spec) where
+module Data.WaveletsSpec (main, spec, testWaveletHaar_PackerSeparate) where
 
 import Test.Hspec
 
@@ -11,7 +11,7 @@ import System.IO
 
 -- 3 sinusoids added together to make an interesting data set that is easy to understand 
 testWaveletData :: [Double]
-testWaveletData = [ ((sin (pi*t*2))+ (sin (pi * t * 2.1) + (sin (pi * t * 2.002))))* 12 | t <- [1 .. 10000] ]
+testWaveletData = [ ((sin (pi*t*2))+ (sin (pi * t * 2.1) + (sin (pi * t * 2.002))))* 12 | t <- [1 .. 2000] ]
 
 
 waveletHaar_packer_separate_testStub  :: IO [[Double]]

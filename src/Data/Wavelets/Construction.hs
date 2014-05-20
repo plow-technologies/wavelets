@@ -13,5 +13,7 @@ import Data.Vector hiding (map)
 vdwt :: (Num t) =>  Int -> WaveletFilter t -> WaveletPacker t c -> Vector t -> c
 vdwt i wft wptc vt = dwt i wft wptc (toList vt)
 
+defaultVdwt :: (Num t, Floating t) => Int -> Vector t -> [[t]]
+defaultVdwt i vt = dwt i haar wp_separate (toList vt)
 
 

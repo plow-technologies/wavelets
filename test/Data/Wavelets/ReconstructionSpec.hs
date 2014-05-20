@@ -1,11 +1,10 @@
-module Data.Wavelets.ReconstructionSpec (main, spec) where
+module Data.Wavelets.ReconstructionSpec (main, spec, testReconstructTimeSeries) where
 
 import Test.Hspec
 
 import Data.Wavelets.Reconstruction
 import Data.Wavelets
 import System.IO
-import qualified Data.Vector.Storable as V
 
 {-| The test waveletData below was transformed into several of the result dataFiles |-}
 
@@ -24,7 +23,7 @@ waveletHaar_packer_separate_testStub = do
   (read `fmap` readFile "./test/Data/haar_separate.tst" )
 
 
-testWaveletHaar_PackerSeparate = dwt 12 haar wp_separate impulse
+testWaveletHaar_PackerSeparate = dwt 10 haar wp_separate impulse
 
 compareWaveletHaarResults = do
   let rslt = testWaveletHaar_PackerSeparate
@@ -32,7 +31,7 @@ compareWaveletHaarResults = do
   return $ (length rslt ) == (length ctrl)
 
 
-testReconstructTimeSeries  = reconstructTimeSeries (12-n) haar wp_separate $ drop n testWaveletHaar_PackerSeparate
+testReconstructTimeSeries  = reconstructTimeSeries (10-n) haar wp_separate $ drop n testWaveletHaar_PackerSeparate
   where n = 3
 
 main :: IO ()
