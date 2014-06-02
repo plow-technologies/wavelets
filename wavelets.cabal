@@ -1,5 +1,5 @@
 Name:                   wavelets
-Version:                0.1.5
+Version:                0.1.6
 Author:                 Scott Murphy<scottmurphy09@gmail.com>
 Maintainer:             Scott Murphy<scottmurphy09@gmail.com>
 License:                BSD3
@@ -35,7 +35,7 @@ Library
                        ,transformers             >= 0.3.0.0
                        ,vector                   >= 0.10.9.1
                        ,unordered-containers     >= 0.2.3.3
-                       ,hmatrix == 0.15.2.0
+                       ,hmatrix == 0.15.2.1
                        ,hstatistics  == 0.2.5.1                     
                        ,statistics == 0.11.0.0
 Test-Suite spec
