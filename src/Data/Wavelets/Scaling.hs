@@ -25,7 +25,7 @@ data SeriesFactors = SeriesFactors {
       seriesMin :: Double ,
       seriesMax :: Double ,
       seriesMean :: Double ,
-      seriesCount  :: Int } deriving (Show,Generic, Eq, Ord)
+      seriesCount  :: Int } deriving (Show,Generic, Eq, Ord, Typeable)
 
 computeSeriesFactors :: [Double] -> SeriesFactors
 computeSeriesFactors v = SeriesFactors mn mx avg tot
