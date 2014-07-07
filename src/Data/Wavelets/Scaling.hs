@@ -1,14 +1,16 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings, DeriveGeneric, DeriveDataTypeable #-}
 
 module Data.Wavelets.Scaling where 
-import Prelude hiding (length,replicate,map,maximum,minimum)
+import Prelude
 -- import Data.Wavelets 
 import Numeric.Statistics
 import Statistics.Function
 import Statistics.Sample
 import GHC.Generics
-import Data.Vector.Storable -- hiding (map)
+import qualified  Data.Vector.Storable as VS
 import Data.Packed.Matrix
+import qualified Data.Packed.Vector as PV
+import Data.Typeable
 -- import Linear
 
 {-| Scale factors are designed to make it possible to use a scaled wavelet to reconstruct an approximation 
@@ -23,15 +25,15 @@ data SeriesFactors = SeriesFactors {
       seriesMin :: Double ,
       seriesMax :: Double ,
       seriesMean :: Double ,
-      seriesCount  :: Int } deriving (Show,Generic)
+      seriesCount  :: Int } deriving (Show,Generic, Eq, Ord)
 
-computeSeriesFactors :: Vector Double -> SeriesFactors
+computeSeriesFactors :: [Double] -> SeriesFactors
 computeSeriesFactors v = SeriesFactors mn mx avg tot
     where (mn, mx,avg, tot) = minMaxAndAverage v 
  
 
-newtype OldSeriesFactors = OSF SeriesFactors  deriving (Show)    
-newtype NewSeriesFactors = NSF SeriesFactors  deriving (Show)  
+newtype OldSeriesFactors = OSF SeriesFactors  deriving (Show, Eq, Ord, Typeable)    
+newtype NewSeriesFactors = NSF SeriesFactors  deriving (Show, Eq, Ord, Typeable)  
 newtype NewSeriesMatrix = NSM (Matrix Double) deriving (Show)   
 newtype OldSeriesMatrix = OSM (Matrix Double) deriving (Show)   
 
@@ -45,8 +47,8 @@ type SeriesMatrix = Matrix Double
 -- ScaleMatrix is the scaling matrix for the least squares problem
 computeSeriesMatrix :: SeriesFactors -> SeriesMatrix
 computeSeriesMatrix (SeriesFactors mn mx amean _ ) = (fromColumns vlst)
-    where onesList = replicate 3 1
-          nsf' = fromList [mn,mx,amean]
+    where onesList = VS.replicate 3 1
+          nsf' = VS.fromList [mn,mx,amean]
           vlst = [onesList,nsf']
 
 computeNewSeriesMatrix :: NewSeriesFactors -> NewSeriesMatrix
@@ -55,7 +57,7 @@ computeNewSeriesMatrix (NSF sf) = NSM $ computeSeriesMatrix sf
 
 computeSeriesResult :: SeriesFactors -> SeriesMatrix
 computeSeriesResult (SeriesFactors mn mx avg _ ) = (fromColumns vlst)
-    where nsf' = fromList [mn,mx,avg]
+    where nsf' = PV.fromList [mn,mx,avg]
           vlst = [nsf']
 
 computeOldSeriesMatrix :: OldSeriesFactors -> OldSeriesMatrix
@@ -93,16 +95,18 @@ absMaxItrFcn a b = max a (abs b)
 
 -- | compute the max min and average of a Vector in one pass 
 -- (avg, max, min, tot)
-minMaxAndAverage :: Vector Double -> (Double, Double ,Double , Int )
+minMaxAndAverage :: [Double] -> (Double, Double ,Double , Int )
 minMaxAndAverage v = (mn,mx,av,l)
     where
-      av = mean v
-      (mn, mx) = minMax v
+      av = (sum v) / (fromIntegral $ length v)
+      --(mn, mx) = minMax v
+      mn = minimum  v
+      mx = maximum v
       l = length v
 
 
 
-applyScalingMatrix :: ScalingMatrix -> Vector Double -> Vector Double 
+applyScalingMatrix :: ScalingMatrix -> [Double] -> [Double] 
 applyScalingMatrix (SM sm) v = map scaleFcn v
     where tCoef = sm @@> (0,0)
           sCoef = sm @@> (1,0)
