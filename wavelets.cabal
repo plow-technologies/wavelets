@@ -35,9 +35,9 @@ Library
                        ,transformers             >= 0.3.0.0
                        ,vector                   >= 0.10.9.1
                        ,unordered-containers     >= 0.2.3.3
-                       ,hmatrix == 0.15.2.1
-                       ,hstatistics  == 0.2.5.1                     
-                       ,statistics == 0.11.0.0
+                       ,hmatrix >= 0.15.2.1
+                       ,hstatistics  >= 0.2.5.1                     
+                       ,statistics >= 0.11.0.0
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
   Default-Language:     Haskell2010

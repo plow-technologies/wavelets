@@ -4,8 +4,8 @@ module Data.Wavelets.Scaling where
 import Prelude
 -- import Data.Wavelets 
 import Numeric.Statistics
-import Statistics.Function
-import Statistics.Sample
+
+
 import GHC.Generics
 import qualified  Data.Vector.Storable as VS
 import Data.Packed.Matrix

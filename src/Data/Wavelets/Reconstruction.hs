@@ -4,8 +4,8 @@
 module Data.Wavelets.Reconstruction where 
 import Prelude hiding (map,maximum,minimumx)
 import Data.Wavelets 
-import Numeric.Statistics
-import Statistics.Sample
+-- -- -- -- -- import Numeric.Statistics
+-- -- -- -- -- import Statistics.Sample
 -- import Data.Vector.Storable -- hiding (map)
 -- import Linear
 
