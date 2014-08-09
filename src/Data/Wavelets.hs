@@ -9,10 +9,7 @@ module Data.Wavelets (
     wp_interleave, wp_separate,
     -- * Transform functions
     dwt, idwt, idwtsynth
-    )
-
-
-where
+    ) where
 
 
 -- | Wavelet filter type containing the wavelet linear filter, its
@@ -43,20 +40,12 @@ wavelet_s l
 -- | Compute coefficients of scaling (smoothing) filter from wavelet (detail)
 -- filter.
 scalingfromwavelet :: Num t => [t] -> [t]
-scalingfromwavelet l = w2s l [] 1
-  where
-    w2s [] r sig = r
-    w2s (h:t) r sig = w2s t (sig*h : r) (-sig)
-
+scalingfromwavelet l = zipWith (*) l $ cycle [1,-1]
 
 -- | Compute coefficients of wavelet (detail) filter from scaling (smoothing)
 -- filter.
 waveletfromscaling :: Num t => [t] -> [t]
-waveletfromscaling l = s2w l [] (-1)
-  where
-    s2w [] r sig = r
-    s2w (h:t) r sig = s2w t (sig*h : r) (-sig)
-
+waveletfromscaling l = zipWith (*) l $ cycle [-1,1]
 
 -- | Verify the orthonormality relation of a wavelet filter.  Actually the
 -- judgement has still to be made by the calling context, as the relation will
