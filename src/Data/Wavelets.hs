@@ -54,13 +54,13 @@ waveletfromscaling l = zipWith (*) l $ cycle [-1,1]
 -- value) and orthogonality condition (second).
 
 verifywavelet :: (Floating t, Eq t) => WaveletFilter t -> (t, t)
-verifywavelet wavelet
+verifywavelet wv
   | len /= wlen || len /= slen = error "verifywavelet: Explicit length inconsistent with length of filters"
   | len == 0 = error "verifywavelet: Wavelet length must be non-zero"
   | odd len = error "verifywavelet: Length of wavelet must be even"
   | otherwise = (diagdev, offdev)
   where
-    MakeWaveletFilter wfilt sfilt len = wavelet
+    MakeWaveletFilter wfilt sfilt len = wv
     wlen = length wfilt
     slen = length sfilt
     allshifts filt = take (len `div` 2) $ iterate rot2left filt
@@ -79,9 +79,8 @@ maphead f (h:t) = map (f h) t
 -- | Rotate a list two places to the left by removing and appending the first
 -- two elements.
 rot2left :: [t] -> [t]
-rot2left (h:t) = t1 ++ [h, h1]
-  where (h1:t1) = t
-
+rot2left (h:h1:t1) = t1 ++ [h, h1]
+rot2left xs = xs
 
 -- | Root of mean square of a list of numbers.
 rms :: (Floating t, Eq t) => [t] -> t
@@ -320,10 +319,13 @@ data WaveletPacker t c = MakeWaveletPacker c ([t] -> c -> c) (c -> ([t], c)) (c 
 -- each block of 2^order coefficients).
 wp_interleave :: Num t => WaveletPacker t [t]
 wp_interleave = MakeWaveletPacker [] interleave_pack interleave_unpack id
+
 interleave_pack :: [t] -> [t] -> [t]
 interleave_pack l1 [] = l1
 interleave_pack [] l2 = l2
 interleave_pack (h1:t1) (h2:t2) = h1 : h2 : interleave_pack t1 t2
+
+interleave_unpack :: [t] -> ([t], [t])
 interleave_unpack [] = ([], [])
 interleave_unpack (h:t) = (h : fst rest, h2 : snd rest)
   where
@@ -338,8 +340,10 @@ interleave_unpack (h:t) = (h : fst rest, h2 : snd rest)
 -- of two between neighbouring coefficient lists.
 wp_separate :: Num t => WaveletPacker t [[t]]
 wp_separate = MakeWaveletPacker [] (:) separate_unpack head
+
 separate_unpack :: [[t]] -> ([t], [[t]])
 separate_unpack (h:t) = (h, t)
+separate_unpack _ = ([],[])
 
 
 -- | Scalar product of two vectors; or sum of products of two lists of numbers.
@@ -351,8 +355,8 @@ scalarprod l1 l2 = sum $ zipWith (*) l1 l2
 -- overlaps with the data and its middle is at an odd position relative to the
 -- start of the data.
 databias :: Num t => WaveletFilter t -> Int
-databias wavelet = len `div` 2 - 1 + 2 * (len `div` 4)
-   where MakeWaveletFilter _ _ len = wavelet
+databias wv = len `div` 2 - 1 + 2 * (len `div` 4)
+   where MakeWaveletFilter _ _ len = wv
 
 
 -- | One stage of the discrete wavelet transform.  The first argument is the
@@ -360,9 +364,9 @@ databias wavelet = len `div` 2 - 1 + 2 * (len `div` 4)
 -- first stage, or successively higher-scale smoothing coefficients.  The
 -- returned pair contains the resulting detail and smoothing coefficients.
 dwtstage :: Num t => WaveletFilter t -> [t] -> ([t], [t])
-dwtstage wavelet lowscalcoeffs = (waveletcoeffs, scalingcoeffs)
+dwtstage wv lowscalcoeffs = (waveletcoeffs, scalingcoeffs)
   where
-    MakeWaveletFilter wfilt sfilt len = wavelet
+    MakeWaveletFilter wfilt sfilt _ = wv
     timeseries = takeWhile (not . null) $ map (flip delay lowscalcoeffs) [0,-2..]
     waveletcoeffs = map (scalarprod wfilt) timeseries
     scalingcoeffs = map (scalarprod sfilt) timeseries
@@ -380,15 +384,14 @@ dwtstage wavelet lowscalcoeffs = (waveletcoeffs, scalingcoeffs)
 -- that the first coefficients from the last stage corresponds to minimal
 -- overlap between the filter and its input data (i.e. one or two values).
 dwt :: Num t => Int -> WaveletFilter t -> WaveletPacker t c -> [t] -> c
-dwt order wavelet wrapper indata
+dwt order wv wrapper indata
   | order <= 0 = error "dwt: order has to be at least 1"
   | otherwise = foldr wrap_step wrap_init $ getcoeffs bands
   where
-    stage = dwtstage wavelet
     MakeWaveletPacker wrap_init wrap_step _ _ = wrapper
-    init = ([], delay totalbias indata)
-    totalbias = (2 ^ order - 1) * (databias wavelet)
-    bands = take order $ tail $ iterate (dwtstage wavelet . snd) init
+    init_ = ([], delay totalbias indata)
+    totalbias = (2 ^ order - 1) * databias wv
+    bands = take order $ tail $ iterate (dwtstage wv . snd) init_
     getcoeffs :: [(a, a)] -> [a]
     getcoeffs l
       | length l == 1 = [fst h, snd h]
@@ -415,9 +418,9 @@ asymzipadd (h1:t1) (h2:t2) = (h1 + h2) : asymzipadd t1 t2
 -- coefficients one level more detailed, or (for the last stage) the original
 -- data.
 idwtstage :: Num t => WaveletFilter t -> [t] -> [t] -> [t]
-idwtstage wavelet waveletcoeffs scalingcoeffs = zipWith (+) wavepart scalepart
+idwtstage wv waveletcoeffs scalingcoeffs = zipWith (+) wavepart scalepart
   where
-    MakeWaveletFilter wfilt sfilt _ = wavelet
+    MakeWaveletFilter wfilt sfilt _ = wv
     wavepart = superimpose $ map (flip scalarmult wfilt) waveletcoeffs
     scalepart = superimpose $ map (flip scalarmult sfilt) scalingcoeffs
     superimpose :: Num t1 => [[t1]] -> [t1]
@@ -436,9 +439,9 @@ idwtstage wavelet waveletcoeffs scalingcoeffs = zipWith (+) wavepart scalepart
 -- to use this function for synthesis (where the first values will usually be
 -- non-zero).  If you do not want them, use idwt instead.
 idwtsynth :: Num t => Int -> WaveletFilter t -> WaveletPacker t c -> c -> [t]
-idwtsynth order wavelet wrapper coeffs
+idwtsynth order wv wrapper coeffs
   | order <= 0 = error "idwtsynth: order has to be at least 1"
-  | otherwise = foldr (idwtstage wavelet) lowestscale unpacked
+  | otherwise = foldr (idwtstage wv) lowestscale unpacked
   where
     MakeWaveletPacker _ _ unwrap_step unwrap_last = wrapper
     unpacked_pre = take order $ tail $ iterate (unwrap_step . snd) ([0], coeffs)
@@ -454,7 +457,7 @@ idwtsynth order wavelet wrapper coeffs
 -- because the result of the inverse transform (before removing the prefix) is
 -- always even in length.
 idwt :: Num t => Int -> WaveletFilter t -> WaveletPacker t c -> c -> [t]
-idwt order wavelet wrapper coeffs = delay (-totalbias) synthresult
+idwt order wv wrapper coeffs = delay (-totalbias) synthresult
   where
-    totalbias = (2 ^ order - 1) * (databias wavelet)
-    synthresult = idwtsynth order wavelet wrapper coeffs
+    totalbias = (2 ^ order - 1) * databias wv
+    synthresult = idwtsynth order wv wrapper coeffs

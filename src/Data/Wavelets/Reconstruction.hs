@@ -2,7 +2,7 @@
 
 
 module Data.Wavelets.Reconstruction where 
-import Prelude hiding (map,maximum,minimumx)
+import Prelude hiding (map,maximum)
 import Data.Wavelets 
 -- -- -- -- -- import Numeric.Statistics
 -- -- -- -- -- import Statistics.Sample

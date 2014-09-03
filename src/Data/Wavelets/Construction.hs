@@ -3,8 +3,6 @@
 module Data.Wavelets.Construction where 
 
 import Data.Wavelets 
-import Numeric.Statistics
-import Data.Vector hiding (map)
 -- import Linear
 
 
